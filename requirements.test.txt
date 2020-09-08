@@ -1,0 +1,5 @@
+# Python PIP Package Requirements for running tests
+# Run 'pip install -r requirements_tests.txt'
+
+pytest
+requests

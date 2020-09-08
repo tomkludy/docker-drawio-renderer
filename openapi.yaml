@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: Draw.io Renderer
+  description: REST API for rendering [diagrams.net](https://diagrams.net) (formerly known as [draw.io](https://draw.io)).
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/
+    description: Locally running docker container. See instructions.
+paths:
+  /convert:
+    post:
+      summary: Convert a diagram to an image
+      description: Convert a diagram to a supported image format.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Options'
+            examples:
+              PNG:
+                value:
+                  source: <mxfile><diagram>jZLbboMwDIafhstJ0Gwtu13XwyYhTaq0apcp8UikgFFqBvTpF4aBoqrSrrA/H3B+OxDrvNk5WeoEFdhgEaomEK/BYhFF4dJ/OtL2ZBU/9yBzRnHSBA7mAgxDppVRcJ4lEqIlU85hikUBKc2YdA7redo32vlfS5nBDTik0t7So1Gkexo/hRPfg8k0jQ/mSC6HZAZnLRXWV0hsArF2iNRbebMG24k36NLXbe9Ex8EcFPSfgs/T28ldNNmtTd4fd3Hy9dE+cJcfaSt+8N5XoUdHdF6qfnJqBzkcVoWCrmMYiJdaG4JDKdMuWvsD8ExTbr0XeZN7gyNo7g4djVL4GwLMgVzrU7hALFk9Ph+xYr+elhENCuurRQx1kvefja0nibzBKg3utI2/2NVNi80v</diagram></mxfile>
+                  embed: true
+              JPEG:
+                value:
+                  source: <mxfile><diagram>jZLbboMwDIafhstJ0Gwtu13XwyYhTaq0apcp8UikgFFqBvTpF4aBoqrSrrA/H3B+OxDrvNk5WeoEFdhgEaomEK/BYhFF4dJ/OtL2ZBU/9yBzRnHSBA7mAgxDppVRcJ4lEqIlU85hikUBKc2YdA7redo32vlfS5nBDTik0t7So1Gkexo/hRPfg8k0jQ/mSC6HZAZnLRXWV0hsArF2iNRbebMG24k36NLXbe9Ex8EcFPSfgs/T28ldNNmtTd4fd3Hy9dE+cJcfaSt+8N5XoUdHdF6qfnJqBzkcVoWCrmMYiJdaG4JDKdMuWvsD8ExTbr0XeZN7gyNo7g4djVL4GwLMgVzrU7hALFk9Ph+xYr+elhENCuurRQx1kvefja0nibzBKg3utI2/2NVNi80v</diagram></mxfile>
+                  format: jpeg
+                  quality: 95
+              SVG:
+                value:
+                  source: <mxfile><diagram>jZLbboMwDIafhstJ0Gwtu13XwyYhTaq0apcp8UikgFFqBvTpF4aBoqrSrrA/H3B+OxDrvNk5WeoEFdhgEaomEK/BYhFF4dJ/OtL2ZBU/9yBzRnHSBA7mAgxDppVRcJ4lEqIlU85hikUBKc2YdA7redo32vlfS5nBDTik0t7So1Gkexo/hRPfg8k0jQ/mSC6HZAZnLRXWV0hsArF2iNRbebMG24k36NLXbe9Ex8EcFPSfgs/T28ldNNmtTd4fd3Hy9dE+cJcfaSt+8N5XoUdHdF6qfnJqBzkcVoWCrmMYiJdaG4JDKdMuWvsD8ExTbr0XeZN7gyNo7g4djVL4GwLMgVzrU7hALFk9Ph+xYr+elhENCuurRQx1kvefja0nibzBKg3utI2/2NVNi80v</diagram></mxfile>
+                  format: svg
+              PDF:
+                value:
+                  source: <mxfile><diagram>jZLbboMwDIafhstJ0Gwtu13XwyYhTaq0apcp8UikgFFqBvTpF4aBoqrSrrA/H3B+OxDrvNk5WeoEFdhgEaomEK/BYhFF4dJ/OtL2ZBU/9yBzRnHSBA7mAgxDppVRcJ4lEqIlU85hikUBKc2YdA7redo32vlfS5nBDTik0t7So1Gkexo/hRPfg8k0jQ/mSC6HZAZnLRXWV0hsArF2iNRbebMG24k36NLXbe9Ex8EcFPSfgs/T28ldNNmtTd4fd3Hy9dE+cJcfaSt+8N5XoUdHdF6qfnJqBzkcVoWCrmMYiJdaG4JDKdMuWvsD8ExTbr0XeZN7gyNo7g4djVL4GwLMgVzrU7hALFk9Ph+xYr+elhENCuurRQx1kvefja0nibzBKg3utI2/2NVNi80v</diagram></mxfile>
+                  format: pdf
+                  pages: '0..5'
+      responses:
+        '200':    # status code
+          description: The image was successfully converted and is returned.
+          content:
+            image/*:
+              schema: 
+                type: string
+                format: binary
+            application/pdf:
+              schema: 
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+        '400':
+          description: An error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Options:
+      type: object
+      properties:
+        source:
+          type: string
+          description: Draw.io-format source file
+        format:
+          type: string
+          enum:
+            - png
+            - jpeg
+            - svg
+            - pdf
+          default: png
+        quality:
+          type: integer
+          description: 'Output image quality for JPEG (default: 90)'
+          minimum: 1
+          maximum: 100
+        transparent:
+          type: boolean
+          description: Use transparent background for PNG
+        embed:
+          type: boolean
+          description: Includes a copy of the diagram (for PNG format only)
+        border:
+          type: integer
+          description: 'Sets the border width around the diagram (default: 0)'
+          minimum: 0
+          maximum: 10000
+        scale:
+          type: number
+          description: Scales the diagram size; 1.0 is default size
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 5
+        width:
+          type: integer
+          description: Fits the generated image/pdf into the specified width, preserves aspect ratio
+          minimum: 10
+          maximum: 10000
+        height:
+          type: integer
+          description: Fits the generated image/pdf into the specified height, preserves aspect ratio
+          minimum: 10
+          maximum: 10000
+        crop:
+          type: boolean
+          description: Crops PDF to diagram size
+      required:
+        - source
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The error that occurred

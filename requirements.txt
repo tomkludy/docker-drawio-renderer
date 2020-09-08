@@ -1,0 +1,6 @@
+# Python PIP Package Requirements
+# Run 'pip install -r requirements.txt'
+
+Flask
+flask-expects-json
+flask-redoc
