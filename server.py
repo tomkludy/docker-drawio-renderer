@@ -10,7 +10,7 @@ from flask.logging import create_logger
 from flask_expects_json import expects_json
 from flask_redoc import Redoc
 import tempfile
-import os, subprocess, re, shutil
+import os, subprocess, re, shutil, sys
 
 app = Flask(__name__)
 log = create_logger(app)
@@ -101,9 +101,11 @@ def convert():
             # occasionally, this error happens.  Trying again should fix it
             # "xvfb-run: error: Xvfb failed to start"
             if len(result.stderr) > 0:
+                print(result.stderr, file=sys.stderr, end='')
                 error = result.stderr.splitlines()[0]
                 if tries_remaining > 0:
                     if error == 'xvfb-run: error: Xvfb failed to start':
+                        print(f"Retry {tries_remaining}...", file=sys.stderr)
                         tries_remaining = tries_remaining - 1
                         continue
                 return {'message': f'Error executing draw.io: {error}'}, 400
