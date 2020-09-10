@@ -18,4 +18,4 @@ ENV HOME /tmp
 EXPOSE 5000
 ENV FLASK_APP server.py
 ENV FLASK_RUN_HOST 0.0.0.0
-CMD ["flask", "run"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--access-logfile", "-", "server:app"]

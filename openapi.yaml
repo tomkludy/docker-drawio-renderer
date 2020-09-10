@@ -52,7 +52,13 @@ paths:
               schema:
                 type: string
         '400':
-          description: An error occurred.
+          description: Invalid data was passed in the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: The diagram was too large for the server to process. Break the diagram into smaller parts, or aAsk the web service operator to increase the available memory if necessary.
           content:
             application/json:
               schema:

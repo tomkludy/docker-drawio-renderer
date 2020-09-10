@@ -14,8 +14,10 @@ Due to the large number of dependencies, the container produced is very big; I w
 ## Running
 
 ```
-docker run -d -p 5000:5000 tomkludy/drawio-renderer:latest
+docker run -d -p 5000:5000 --shm-size=1g tomkludy/drawio-renderer:latest
 ```
+
+Note the `--shm-size` parameter; this determines the maximum memory that can be used during diagram rendering.  If omitted, the default is 256mb.  If you hit out-of-memory errors (HTTP status code 413), try increasing the value of this parameter.
 
 ## API
 

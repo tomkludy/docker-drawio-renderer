@@ -69,7 +69,7 @@ def convert():
         with open(infile, "w") as tmp:
             tmp.write(req['source'])
 
-        cmd = ['xvfb-run', '/usr/bin/drawio', '-x', '-f', fmt, '-o', outfile]
+        cmd = ['xvfb-run', '-a', '/usr/bin/drawio', '-x', '-f', fmt, '-o', outfile]
         if 'quality' in req:
             cmd.extend(['-q', str(req['quality'])])
         if 'transparent' in req:
@@ -93,24 +93,17 @@ def convert():
         # this must be the last parameter
         cmd.append('--no-sandbox')
 
-        # xvfb-run /usr/bin/drawio -x -f png \"\${@}\" --no-sandbox
-        tries_remaining = 3
-        while tries_remaining > 0:
-            result = subprocess.run(cmd, universal_newlines=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-
-            # occasionally, this error happens.  Trying again should fix it
-            # "xvfb-run: error: Xvfb failed to start"
-            if len(result.stderr) > 0:
-                print(result.stderr, file=sys.stderr, end='')
-                error = result.stderr.splitlines()[0]
-                if tries_remaining > 0:
-                    if error == 'xvfb-run: error: Xvfb failed to start':
-                        print(f"Retry {tries_remaining}...", file=sys.stderr)
-                        tries_remaining = tries_remaining - 1
-                        continue
-                return {'message': f'Error executing draw.io: {error}'}, 400
-            
-            break
+        result = subprocess.run(cmd, universal_newlines=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        if len(result.stderr) > 0:
+            print(result.stderr, file=sys.stderr, end='', flush=True)
+            error = result.stderr.splitlines()[0]
+            if 'Out of memory' in error:
+                code = 413
+            elif 'Xvfb failed to start' in error:
+                code = 500
+            else:
+                code = 400
+            return {'message': f'Error executing draw.io: {error}'}, code
 
         line = result.stdout.splitlines()[0]
         if f" -> {outfile}" not in line:
