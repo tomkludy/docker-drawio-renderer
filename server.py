@@ -45,11 +45,7 @@ def bad_request(error):
     except AttributeError: 
         return {'error': error.description}, 400
 
-@app.route('/convert', methods=['POST'])
-@expects_json(schema, fill_defaults=True)
-def convert():
-    req = g.data
-    fmt = req['format']
+def convert_common(req, source, fmt):
     if 'quality' in req and fmt != 'jpeg':
         return {'message': f"only jpeg format supports quality"}, 400
     if 'transparent' in req and fmt != 'png':
@@ -66,15 +62,15 @@ def convert():
     outfile = os.path.join(tmpdir, outbase)
     log.info("%s -> %s", infile, outfile)
     try:
-        with open(infile, "w") as tmp:
-            tmp.write(req['source'])
+        with open(infile, "wb") as tmp:
+            tmp.write(source)
 
         cmd = ['xvfb-run', '-a', '/usr/bin/drawio', '-x', '-f', fmt, '-o', outfile]
         if 'quality' in req:
             cmd.extend(['-q', str(req['quality'])])
-        if 'transparent' in req:
+        if 'transparent' in req and req['transparent']:
             cmd.append('-t')
-        if 'embed' in req:
+        if 'embed' in req and req['embed']:
             cmd.append('-e')
         if 'border' in req:
             cmd.extend(['-b', str(req['border'])])
@@ -84,7 +80,7 @@ def convert():
             cmd.extend(['--width', str(req['width'])])
         if 'height' in req:
             cmd.extend(['--height', str(req['height'])])
-        if 'crop' in req:
+        if 'crop' in req and req['crop']:
             cmd.append('--crop')
 
         # this must be the next-to-last parameter
@@ -113,6 +109,76 @@ def convert():
     finally:
         os.umask(saved_umask)
         shutil.rmtree(tmpdir)
+
+@app.route('/convert', methods=['POST'])
+@expects_json(schema, fill_defaults=True)
+def convert_json():
+    req = g.data
+    source = req['source'].encode('utf-8')
+    fmt = req['format']
+    return convert_common(req, source, fmt)
+
+def try_to_int(req, prop, minimum, maximum):
+    if prop in req:
+        try:
+            val = int(req[prop])
+            if val < minimum or val > maximum:
+                return f'{prop} must be an integer from {minimum}-{maximum}'
+            req[prop] = val
+        except ValueError:
+            return f'{prop} must be an integer from {minimum}-{maximum}'
+    return None
+
+def try_to_bool(req, prop):
+    if prop in req:
+        val = req[prop].lower()
+        if val == 'true':
+            req[prop] = True
+        elif val == 'false':
+            req[prop] = False
+        else:
+            return f'{prop} must be true or false'
+    return None
+
+def try_to_float(req, prop, maximum):
+    if prop in req:
+        try:
+            val = float(req[prop])
+            if val <= 0.0 or val > maximum:
+                return f'{prop} must be an integer from 0-{maximum}'
+            req[prop] = val
+        except ValueError:
+            return f'{prop} must be an integer from 0-{maximum}'
+    return None
+
+@app.route('/convert_file', methods=['POST'])
+def convert_file():
+    req = request.args.copy() if request.args else {}
+    error = try_to_int(req, 'quality', 1, 100) or \
+            try_to_bool(req, 'transparent') or \
+            try_to_bool(req, 'embed') or \
+            try_to_int(req, 'border', 0, 10000) or \
+            try_to_float(req, 'scale', 5.0) or \
+            try_to_int(req, 'width', 10, 131072) or \
+            try_to_int(req, 'height', 10, 131072) or \
+            try_to_bool(req, 'crop')
+    if error: return {'error': error}, 400
+
+    source = request.get_data()
+
+    accept = request.accept_mimetypes
+    content_types = {
+        'image/png': 'png',
+        'image/jpeg': 'jpeg',
+        'image/svg+xml; charset=utf-8': 'svg',
+        'application/pdf': 'pdf'
+    }
+    best = accept.best_match(content_types.keys())
+    if not best in content_types:
+        return {'error': f"Not Acceptable; must 'Accept:' one of: {list(content_types.keys())}"}, 406
+
+    fmt = content_types[best]
+    return convert_common(req, source, fmt)
 
 if __name__ == '__main__':
     app.run()

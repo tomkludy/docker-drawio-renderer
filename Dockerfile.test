@@ -4,4 +4,4 @@ COPY requirements.test.txt requirements.test.txt
 RUN pip install -r requirements.test.txt
 COPY test_server.py test_server.py
 COPY test_assets test_assets
-CMD ["python", "-m", "pytest", "test_server.py"]
+CMD ["python", "-u", "-m", "pytest", "test_server.py"]

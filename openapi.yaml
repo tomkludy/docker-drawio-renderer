@@ -1,12 +1,95 @@
 openapi: 3.0.0
 info:
   title: Draw.io Renderer
-  description: REST API for rendering [diagrams.net](https://diagrams.net) (formerly known as [draw.io](https://draw.io)).
-  version: 1.0.0
+  description: |
+    REST API for rendering diagrams built on [diagrams.net](https://diagrams.net)
+    (formerly known as [draw.io](https://draw.io)) into images.
+  version: 1.1.0
 servers:
   - url: http://localhost:5000/
     description: Locally running docker container. See instructions.
 paths:
+  /convert_file:
+    post:
+      summary: Convert a diagram to an image
+      description: |
+        Convert a diagram to a supported image format.
+
+        Note: The caller must specify the `Accept:` request header with one
+        of the possible output format MIME types in order to choose
+        the desired image format.
+      parameters:
+        - in: query
+          name: quality
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: 'Output image quality for JPEG (default: 90)'
+        - in: query
+          name: transparent
+          schema:
+            type: boolean
+          description: Use transparent background for PNG
+        - in: query
+          name: embed
+          schema:
+            type: boolean
+          description: Includes a copy of the diagram (for PNG format only)
+        - in: query
+          name: border
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000
+          description: 'Sets the border width around the diagram (default: 0)'
+        - in: query
+          name: scale
+          schema:
+            type: number
+            minimum: 0
+            exclusiveMinimum: true
+            maximum: 5
+          description: Scales the diagram size; 1.0 is default size
+        - in: query
+          name: width
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 10000
+          description: Fits the generated image/pdf into the specified width, preserves aspect ratio
+        - in: query
+          name: height
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 10000
+          description: Fits the generated image/pdf into the specified height, preserves aspect ratio
+        - in: query
+          name: crop
+          schema:
+            type: boolean
+          description: Crops PDF to diagram size
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              type: string
+            example: <mxfile><diagram>jZLbboMwDIafhstJ0Gwtu13XwyYhTaq0apcp8UikgFFqBvTpF4aBoqrSrrA/H3B+OxDrvNk5WeoEFdhgEaomEK/BYhFF4dJ/OtL2ZBU/9yBzRnHSBA7mAgxDppVRcJ4lEqIlU85hikUBKc2YdA7redo32vlfS5nBDTik0t7So1Gkexo/hRPfg8k0jQ/mSC6HZAZnLRXWV0hsArF2iNRbebMG24k36NLXbe9Ex8EcFPSfgs/T28ldNNmtTd4fd3Hy9dE+cJcfaSt+8N5XoUdHdF6qfnJqBzkcVoWCrmMYiJdaG4JDKdMuWvsD8ExTbr0XeZN7gyNo7g4djVL4GwLMgVzrU7hALFk9Ph+xYr+elhENCuurRQx1kvefja0nibzBKg3utI2/2NVNi80v</diagram></mxfile>
+          application/drawio:
+            schema:
+              type: string
+            example: <mxfile><diagram>jZLbboMwDIafhstJ0Gwtu13XwyYhTaq0apcp8UikgFFqBvTpF4aBoqrSrrA/H3B+OxDrvNk5WeoEFdhgEaomEK/BYhFF4dJ/OtL2ZBU/9yBzRnHSBA7mAgxDppVRcJ4lEqIlU85hikUBKc2YdA7redo32vlfS5nBDTik0t7So1Gkexo/hRPfg8k0jQ/mSC6HZAZnLRXWV0hsArF2iNRbebMG24k36NLXbe9Ex8EcFPSfgs/T28ldNNmtTd4fd3Hy9dE+cJcfaSt+8N5XoUdHdF6qfnJqBzkcVoWCrmMYiJdaG4JDKdMuWvsD8ExTbr0XeZN7gyNo7g4djVL4GwLMgVzrU7hALFk9Ph+xYr+elhENCuurRQx1kvefja0nibzBKg3utI2/2NVNi80v</diagram></mxfile>
+      responses:
+        '200':
+          $ref: "#/components/responses/Ok"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '409':
+          $ref: "#/components/responses/NotAcceptable"
+        '413':
+          $ref: "#/components/responses/EntityTooLarge"
   /convert:
     post:
       summary: Convert a diagram to an image
@@ -37,33 +120,56 @@ paths:
                   format: pdf
                   pages: '0..5'
       responses:
-        '200':    # status code
-          description: The image was successfully converted and is returned.
-          content:
-            image/*:
-              schema: 
-                type: string
-                format: binary
-            application/pdf:
-              schema: 
-                type: string
-                format: binary
-            text/html:
-              schema:
-                type: string
+        '200':
+          $ref: "#/components/responses/Ok"
         '400':
-          description: Invalid data was passed in the request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: "#/components/responses/BadRequest"
+        '409':
+          $ref: "#/components/responses/NotAcceptable"
         '413':
-          description: The diagram was too large for the server to process. Break the diagram into smaller parts, or aAsk the web service operator to increase the available memory if necessary.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: "#/components/responses/EntityTooLarge"
 components:
+  responses:
+    Ok:
+      description: The image was successfully converted and is returned.
+      content:
+        image/png:
+          schema: 
+            type: string
+            format: binary
+          example: "\\x89PNG\\x0D\\x0A\\x1A\\x0A..."
+        image/jpeg:
+          schema: 
+            type: string
+            format: binary
+          example: "\\xFF\\xD8\\xFF\\xE0\\x00\\x10JFIF\\x00\\x01..."
+        application/pdf:
+          schema: 
+            type: string
+            format: binary
+          example: "%PDF-1.4..."
+        image/svg+xml; encoding=utf-8:
+          schema:
+            type: string
+          example: "<!DOCTYPE svg ..."
+    BadRequest:
+      description: Invalid data was passed in the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotAcceptable:
+      description: "`Accept:` request header did not specify a supported image format."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    EntityTooLarge:
+      description: The diagram was too large for the server to process. Break the diagram into smaller parts, or ask the web service operator to increase the available memory if necessary.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
     Options:
       type: object

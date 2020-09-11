@@ -5,7 +5,7 @@ Dockerized service exposing a REST interface for rendering draw.io diagrams into
 
 [Diagrams.net](https://diagrams.net) has added [command-line options](https://j2r2b.github.io/2019/08/06/drawio-cli.html) to [Draw.io Desktop](https://github.com/jgraph/drawio-desktop) which allow you to automate converting diagrams into images.  This is great!
 
-Unfortunately, Draw.io desktop is an Electron-based application, and cannot execute without first installing a huge number of dependencies, including a GUI environment such as X11 within which it can run.  This makes it difficult to integrate into other services such as Jenkins build pipelines.
+Unfortunately, Draw.io Desktop is an Electron-based application, and cannot execute without first installing a huge number of dependencies, including a GUI environment such as X11 within which it can run.  This makes it difficult to integrate into other services such as Jenkins build pipelines.
 
 This package puts Draw.io Desktop into a Docker container along with all of its dependencies and a simple HTTP REST server, allowing you to easily call it from other services regardless of platform or language.
 
@@ -21,9 +21,36 @@ Note the `--shm-size` parameter; this determines the maximum memory that can be 
 
 ## API
 
-Start up the container and navigate to the `/docs` route on it; for example: `http://localhost:5000/docs`
+New in v1.1: Now it is simpler to use the service from the command-line using `curl`, `wget`, `Invoke-WebRequest` or similar. Specify the `Accept:` request header to the desired output type and send the draw.io file as request content to the `/convert_file` endpoint; for example:
 
-Alternatively, plug [openapi.yaml](openapi.yaml) into your favorite OpenAPI renderer such as https://editor.swagger.io to see the API details.
+```text
+curl -d @inputfile.drawio -H "Accept: application/pdf" http://localhost:5000/convert_file?crop=true --output outputfile.pdf
+```
+
+Supported `Accept:` values:
+
+| MIME type | Image format |
+| - | - |
+| `image/png` | PNG |
+| `image/jpeg` | JPEG |
+| `application/pdf` | PDF |
+| `image/svg+xml; encoding=utf-8` | SVG |
+
+Supported query parameters:
+
+| Parameter | Description |
+| - | - |
+| `quality={n}` | Output image quality for JPEG (1-100, default: 90) |
+| `transparent=true` | Use transparent background for PNG |
+| `embed=true` | Includes a copy of the diagram (for PNG format only) |
+| `border={n}` | Sets the border width around the diagram (0-10000, default: 0) |
+| `scale={n.m}` | Scales the diagram size (0.0-5.0, 1.0 is default size |
+| `width={n}` | Fits the generated image/pdf into the specified width, preserves aspect ratio (10-131072) |
+| `height={n}` | Fits the generated image/pdf into the specified height, preserves aspect ratio (10-131072) |
+| `crop=true` | Crops PDF to diagram size |
+
+
+For full API documentation, start up the container and navigate to the `/docs` route with your browser; for example: `http://localhost:5000/docs`
 
 ## Shout outs
 

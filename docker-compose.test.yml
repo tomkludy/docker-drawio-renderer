@@ -4,7 +4,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.test
-        command: python -m pytest test_server.py
+        command: python -u -m pytest test_server.py
         depends_on:
             - drawio-renderer
     drawio-renderer:
