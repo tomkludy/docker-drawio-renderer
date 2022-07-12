@@ -56,4 +56,10 @@ For full API documentation, start up the container and navigate to the `/docs` r
 
 This would not have been possible without [this post](https://github.com/jgraph/drawio-desktop/issues/127#issuecomment-520053181) from [Joel Martin](https://github.com/kanaka); he resolved most of the hard issues.
 
-_Note: contrary to the linked comment thread, this approach does NOT require `--cap-add SYS_ADMIN`._
+The older versions (before v1.2) were much smaller but had a problem with some fonts, and stopped working when I tried to upgrade the versions of dependencies.  Luckily, [Erwan BOUSSE](https://gitlab.univ-nantes.fr/bousse-e) created [a version](https://gitlab.univ-nantes.fr/bousse-e/docker-drawio) of containerized drawio that works.  This builds on his approach and retains the simple REST API on top.
+
+## Building the container
+
+```
+docker-compose build
+```

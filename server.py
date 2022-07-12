@@ -65,7 +65,7 @@ def convert_common(req, source, fmt):
         with open(infile, "wb") as tmp:
             tmp.write(source)
 
-        cmd = ['xvfb-run', '-a', '/usr/bin/drawio', '-x', '-f', fmt, '-o', outfile]
+        cmd = ['xvfb-run', '-a', '/opt/drawio/drawio', '-x', '-f', fmt, '-o', outfile]
         if 'quality' in req:
             cmd.extend(['-q', str(req['quality'])])
         if 'transparent' in req and req['transparent']:
@@ -101,7 +101,7 @@ def convert_common(req, source, fmt):
                 code = 400
             return {'message': f'Error executing draw.io: {error}'}, code
 
-        line = result.stdout.splitlines()[0]
+        line = result.stdout.splitlines()[-1]
         if f" -> {outfile}" not in line:
             return {'message': f'Error processing input: {line}'}, 400
 
